@@ -51,20 +51,21 @@ def main(args):
     subsystem_name = ['memory', 'blkio', 'cpu']
     cgroup_path = "/sys/fs/cgroup/%s/docker/"
     for subsystem in subsystem_name:
-        path = (cgroup_path % subsystem) + ("%s/" % CID)
+        path = os.path.join((cgroup_path % subsystem), CID)
         logging.debug("Checking container at path: %s:" % path)
         cgroup_files = []
         for (dirpath, dirnames, filenames) in walk(path):
             cgroup_files.extend(filenames)
             break
         for filename in cgroup_files:
-            filename = path + filename
-            logging.debug("Opening cgroup file at path: %s:" % filename)
-            lines = []
-            with open(filename, 'r') as f:
-                for line in f:
-                    lines.append(line)
-            c.addSubsystemItem(subsystem, filename, f)
+            fname = os.path.join(path, filename)
+            logging.debug("Opening cgroup file at path: <%s>" % fname)
+            contents = ""
+            with open(fname, "r") as f:
+                print f
+                contents = f.read()
+
+            c.addSubsystemItem(subsystem, filename, contents)
 
     pickled_object = pickle.dumps(c)
     r.set(CID, pickled_object)
