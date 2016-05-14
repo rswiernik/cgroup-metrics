@@ -17,14 +17,14 @@ class container:
         self.cpu    = {}
         self.blkio  = {}
     
-    def addMemItem(self, cid, item):
-        self.memory[cid] = item
+    def addMemItem(self, name, metric):
+        self.memory[name] = metric
     
-    def addCpuItem(self, cid, item):
-        self.cpu[cid] = item
+    def addCpuItem(self, name, metric):
+        self.cpu[name] = metric
 
-    def addBlkioItem(self, cid, item):
-        self.blkio[cid] = item
+    def addBlkioItem(self, name, metric):
+        self.blkio[name] = metric
 
 
 def main(args):
@@ -49,9 +49,9 @@ def main(args):
     memory_path = ("/sys/fs/cgroup/memory/docker/%s/", args.cid)
 
     r = redis.StrictRedis(host=redis_addr, port=6379, db=0)
-    
-    instance = container(args.cid)
+    c = container(args.cid)
 
+    
     logging.debug("Stopping - %s: %s" % ("Finished collecting metrics", args.cid))
 
 
