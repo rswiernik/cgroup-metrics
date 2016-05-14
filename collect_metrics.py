@@ -6,7 +6,7 @@ import logging
 
 import pickle
 import redis
-
+from os import walk
 
 class container:
     def __init__(self, cid=None):
@@ -17,14 +17,13 @@ class container:
         self.cpu    = {}
         self.blkio  = {}
     
-    def addMemItem(self, name, metric):
-        self.memory[name] = metric
-    
-    def addCpuItem(self, name, metric):
-        self.cpu[name] = metric
-
-    def addBlkioItem(self, name, metric):
-        self.blkio[name] = metric
+    def addSubsystemItem(self, subsystem, name, metric):
+        if(subsystem == 'memory'):
+            self.memory[name] = metric
+        if(subsystem == 'cpu'):
+            self.cpu[name] = metric
+        if(subsystem == 'blkio'):
+            self.blkio[name] = metric
 
 
 def main(args):
@@ -45,13 +44,32 @@ def main(args):
 
     logging.debug("Starting - %s: %s" % ("Docker container", args.cid))
 
+    CID = args.cid
     redis_addr = args.redis_remote
-    memory_path = ("/sys/fs/cgroup/memory/docker/%s/", args.cid)
-
     r = redis.StrictRedis(host=redis_addr, port=6379, db=0)
     c = container(args.cid)
+    subsystem_name = ['memory', 'blkio', 'cpu']
+    cgroup_path = "/sys/fs/cgroup/%s/docker/"
+    for subsystem in subsystem_name:
+        path = (cgroup_path % subsystem) + ("%s/" % CID)
+        logging.debug("Checking container at path: %s:" % path)
+        cgroup_files = []
+        for (dirpath, dirnames, filenames) in walk(path):
+            cgroup_files.extend(filenames)
+            break
+        for filename in cgroup_files:
+            filename = path + filename
+            logging.debug("Opening cgroup file at path: %s:" % filename)
+            lines = []
+            with open(filename, 'r') as f:
+                for line in f:
+                    lines.append(line)
+            c.addSubsystemItem(subsystem, filename, f)
 
-    
+    pickled_object = pickle.dumps(c)
+    r.set(CID, pickled_object)
+    logging.info("Container %s information pushed to redis" % CID)
+
     logging.debug("Stopping - %s: %s" % ("Finished collecting metrics", args.cid))
 
 
