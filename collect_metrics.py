@@ -8,7 +8,7 @@ import pickle
 import redis
 from os import walk
 
-class container:
+class Container:
     def __init__(self, cid=None):
         if cid is None:
             cid = ""
@@ -16,7 +16,7 @@ class container:
         self.memory = {}
         self.cpu    = {}
         self.blkio  = {}
-    
+
     def addSubsystemItem(self, subsystem, name, metric):
         if(subsystem == 'memory'):
             self.memory[name] = metric
@@ -47,7 +47,7 @@ def main(args):
     CID = args.cid
     redis_addr = args.redis_remote
     r = redis.StrictRedis(host=redis_addr, port=6379, db=0)
-    c = container(args.cid)
+    c = Container(args.cid)
     subsystem_name = ['memory', 'blkio', 'cpu']
     cgroup_path = "/sys/fs/cgroup/%s/docker/"
     for subsystem in subsystem_name:
